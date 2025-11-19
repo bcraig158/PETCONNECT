@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-color: #00AEEF;
+    --text-color: #ffffff;
+    --bg-color: #000000;
+    --font-family: "Poppins", sans-serif;
+    --border-radius: 12px;
+  }
+}
+

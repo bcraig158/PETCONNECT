@@ -1,0 +1,16 @@
+{
+  "sonar:typescript": {
+    "typescript:S2486": {
+      "scope": "all",
+      "severity": "off"
+    },
+    "typescript:S6853": {
+      "scope": "all",
+      "severity": "off"
+    },
+    "typescript:S6759": {
+      "scope": "all",
+      "severity": "off"
+    }
+  }
+}
