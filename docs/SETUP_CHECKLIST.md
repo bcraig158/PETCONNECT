@@ -2,6 +2,8 @@
 
 Use this checklist to ensure your project is fully configured and ready to run.
 
+> **Note**: For detailed setup instructions, see [`SETUP.md`](./SETUP.md).
+
 ## ✅ Pre-Installation Setup
 
 - [ ] Node.js 24 LTS installed (`node -v` should show 24.x)
@@ -21,15 +23,26 @@ Use this checklist to ensure your project is fully configured and ready to run.
    ```
 
 3. [ ] Configure `.env.local` with your values:
+   - [ ] `DATABASE_URL` - PostgreSQL connection string (required)
+   - [ ] `AUTH_SECRET` - Generate with `openssl rand -hex 32` (required)
    - [ ] `NEXT_PUBLIC_SITE_URL` - Set to `http://localhost:3000` for dev
-   - [ ] `PAYMENT_SECRET_KEY` - Your payment processor secret key
-   - [ ] `NEXT_PUBLIC_PAYMENT_PUBLISHABLE_KEY` - Your payment processor publishable key
-   - [ ] `PAYMENT_WEBHOOK_SECRET` - Webhook secret (can be set later)
+   - [ ] `PAYMENT_PROVIDER_BASE_URL` - Payment provider API base URL (optional)
+   - [ ] `PAYMENT_SECRET_KEY` - Your payment processor secret key (optional)
+   - [ ] `PAYMENT_PUBLIC_KEY` - Your payment processor public key (optional)
+   - [ ] `PAYMENT_WEBHOOK_SECRET` - Webhook secret (optional, can be set later)
    - [ ] `RESEND_API_KEY` - Resend API key (optional, for contact form)
-   - [ ] `CONTACT_TO_EMAIL` - Email to receive contact form submissions
-   - [ ] `CONTACT_FROM_EMAIL` - Verified sender email for Resend
+   - [ ] `CONTACT_TO_EMAIL` - Email to receive contact form submissions (optional)
+   - [ ] `CONTACT_FROM_EMAIL` - Verified sender email for Resend (optional)
+   - [ ] `BLOB_READ_WRITE_TOKEN` - Vercel Blob token (optional, for file uploads)
+   - [ ] `UPSTASH_REDIS_REST_URL` - Upstash Redis URL (optional, for rate limiting)
+   - [ ] `UPSTASH_REDIS_REST_TOKEN` - Upstash Redis token (optional)
 
-4. [ ] Add product images to `public/images/`:
+4. [ ] Set up database:
+   - [ ] Generate Prisma client: `npx prisma generate`
+   - [ ] Push schema to database: `npx prisma db push`
+   - [ ] Seed database: `npm run db:seed`
+
+5. [ ] Add product images to `public/images/`:
    - [ ] `alpha.jpg`
    - [ ] `beta.jpg`
    - [ ] `gamma.jpg`
@@ -41,7 +54,7 @@ Use this checklist to ensure your project is fully configured and ready to run.
 
 ## ✅ Payment Integration
 
-- [ ] Review `PAYMENT_INTEGRATION.md` guide
+- [ ] Review [`PAYMENT_INTEGRATION.md`](./PAYMENT_INTEGRATION.md) guide
 - [ ] Implement `createPaymentSession()` in `src/lib/payment.ts`
 - [ ] Implement `createPaymentIntent()` in `src/lib/payment.ts`
 - [ ] Implement `verifyWebhookSignature()` in `src/lib/payment.ts`
@@ -99,7 +112,8 @@ Use this checklist to ensure your project is fully configured and ready to run.
 
 4. [ ] Set up webhooks:
    - [ ] Configure webhook endpoint in payment processor dashboard
-   - [ ] Set webhook URL to: `https://YOUR_DOMAIN/api/webhooks/payment`
+   - [ ] Set webhook URL to: `https://YOUR_DOMAIN/api/webhooks/payments` (recommended)
+   - [ ] Or use `/api/webhooks/payment` for backward compatibility
    - [ ] Copy webhook secret to `PAYMENT_WEBHOOK_SECRET`
 
 5. [ ] Deploy:

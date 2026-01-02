@@ -5,10 +5,12 @@ A complete platform combining e-commerce capabilities with customizable profile 
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router, TypeScript)
+- **Hosting**: Netlify
+- **Database**: Supabase (PostgreSQL)
 - **Styling**: Tailwind CSS
 - **Forms & Validation**: React Hook Form + Zod
 - **State Management**: Zustand
-- **Email**: Resend API
+- **Email**: Resend API (optional)
 - **Payment Processing**: Custom integration (implement your own)
 
 ## Features
@@ -30,69 +32,27 @@ A complete platform combining e-commerce capabilities with customizable profile 
 
 ## Getting Started
 
-### Prerequisites
+See **[docs/SETUP.md](./docs/SETUP.md)** for complete setup instructions.
 
-- Node.js 24 LTS
-- npm or yarn
-- Resend account for email (optional, for contact form)
+Quick start:
 
-### Installation
+1. Install dependencies: `npm install`
+2. Create `.env.local` with your configuration
+3. Set up database: `npx prisma db push && npm run db:seed`
+4. Start dev server: `npm run dev`
+5. Open [http://localhost:3000](http://localhost:3000)
 
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Set up environment variables:
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local` with your configuration (see `.env.example` for all options):
-- `DATABASE_URL`: PostgreSQL connection string (required)
-- `AUTH_SECRET`: Generate with `openssl rand -hex 32` (required)
-- `NEXT_PUBLIC_SITE_URL`: Your site URL (http://localhost:3000 for dev)
-- `PAYMENT_SECRET_KEY`: Your payment processor secret key
-- `PAYMENT_PUBLIC_KEY`: Your payment processor public key
-- `PAYMENT_WEBHOOK_SECRET`: Webhook secret from your payment processor
-- `RESEND_API_KEY`: Resend API key (for contact form)
-- `CONTACT_TO_EMAIL`: Email address to receive contact form submissions
-- `CONTACT_FROM_EMAIL`: Verified sender email for Resend
-- `UPSTASH_REDIS_REST_URL`: Upstash Redis URL (for rate limiting)
-- `UPSTASH_REDIS_REST_TOKEN`: Upstash Redis token
-- `BLOB_READ_WRITE_TOKEN`: Vercel Blob token (optional, for file uploads)
-
-3. Set up the database:
-```bash
-npx prisma generate
-npx prisma db push
-npm run db:seed
-```
-
-4. Run the development server:
-```bash
-npm run dev
-```
-
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+For detailed setup instructions, troubleshooting, and environment variable configuration, see [docs/SETUP.md](./docs/SETUP.md).
 
 ## Payment Integration
 
-This project is configured for a custom payment processor. To integrate your payment provider:
+This project is configured for a custom payment processor. See **[docs/PAYMENT_INTEGRATION.md](./docs/PAYMENT_INTEGRATION.md)** for detailed integration instructions.
 
-1. **Update `src/lib/payment.ts`**:
-   - Implement `createPaymentSession()` for hosted checkout
-   - Implement `createPaymentIntent()` for embedded checkout
-   - Implement `verifyWebhookSignature()` for webhook verification
-
-2. **Update `src/app/checkout/page.tsx`**:
-   - Add your payment processor's payment form component in the "Payment Information" section
-
-3. **Configure webhooks**:
-   - Set up webhook endpoint at `/api/webhooks/payments` (recommended)
-   - Or use `/api/webhooks/payment` for backward compatibility
-   - Update event type handling in the webhook route
-   - Add your webhook secret to `.env.local`
+Quick overview:
+1. Implement payment functions in `src/lib/payment.ts`
+2. Add payment form component to `src/app/checkout/page.tsx`
+3. Configure webhook endpoint at `/api/webhooks/payments`
+4. Update event handling in webhook route
 
 ## Project Structure
 
@@ -137,10 +97,14 @@ src/
 
 ### Available Scripts
 
-- `npm run dev` - Start development server
+- `npm run dev` - Start development server (with Turbopack)
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run type-check` - TypeScript type checking
+- `npm run db:studio` - Open Prisma Studio
+
+See [docs/SETUP.md](./docs/SETUP.md) for a complete list of available scripts.
 
 ### Testing Payments
 
@@ -159,23 +123,31 @@ http://localhost:3000/api/webhooks/payments
 
 ## Deployment
 
-### Vercel (Recommended)
+This project is configured for **Netlify + Supabase** deployment.
 
-1. Push your code to Git
-2. Import project in Vercel
-3. Add environment variables in Vercel Project Settings
-4. Deploy
+### Quick Deploy
 
-### Environment Variables for Production
+1. Push your code to Git (GitHub, GitLab, or Bitbucket)
+2. Create a Supabase project and get your database connection string
+3. Import project in Netlify and connect your Git repository
+4. Set environment variables in Netlify Dashboard
+5. Deploy!
 
-Make sure to set all environment variables in your hosting platform:
-- `NEXT_PUBLIC_SITE_URL` - Your production domain
-- `PAYMENT_SECRET_KEY` - Production payment processor key
-- `NEXT_PUBLIC_PAYMENT_PUBLISHABLE_KEY` - Production publishable key
-- `PAYMENT_WEBHOOK_SECRET` - Production webhook secret
-- `RESEND_API_KEY` - Resend API key
-- `CONTACT_TO_EMAIL` - Contact form recipient
-- `CONTACT_FROM_EMAIL` - Verified sender email
+See **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** for complete deployment instructions.
+
+### Required Environment Variables
+
+Set these in Netlify Dashboard → Site settings → Environment variables:
+
+- `DATABASE_URL` - Supabase PostgreSQL connection string
+- `AUTH_SECRET` - NextAuth secret (generate with `openssl rand -hex 32`)
+- `NEXT_PUBLIC_SITE_URL` - Your Netlify site URL
+
+### Optional Environment Variables
+
+- `RESEND_API_KEY` - For contact form emails
+- `CONTACT_TO_EMAIL` - Email to receive contact form submissions
+- `CONTACT_FROM_EMAIL` - Verified sender email for Resend
 
 ## Product Images
 
@@ -193,6 +165,19 @@ Add product images to `public/images/`:
 - Payment sessions/intents are created server-side
 - Webhook signatures are verified before processing
 - Never expose payment secrets to the client
+
+## Documentation
+
+All documentation is located in the [`docs/`](./docs/) folder:
+
+- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - Netlify + Supabase deployment guide
+- **[SETUP.md](./docs/SETUP.md)** - Complete local setup guide
+- **[SETUP_CHECKLIST.md](./docs/SETUP_CHECKLIST.md)** - Setup checklist
+- **[PAYMENT_INTEGRATION.md](./docs/PAYMENT_INTEGRATION.md)** - Payment provider integration
+- **[PAGE_BUILDER_GUIDE.md](./docs/PAGE_BUILDER_GUIDE.md)** - Page builder documentation
+- **[ADVANCED_PAGE_BUILDER.md](./docs/ADVANCED_PAGE_BUILDER.md)** - Advanced page builder features
+- **[PERFORMANCE_OPTIMIZATIONS.md](./docs/PERFORMANCE_OPTIMIZATIONS.md)** - Performance optimizations
+- **[SONARLINT_WARNINGS.md](./docs/SONARLINT_WARNINGS.md)** - SonarLint warnings reference
 
 ## License
 

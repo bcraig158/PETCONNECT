@@ -15,6 +15,12 @@ export const metadata: Metadata = {
   keywords: ['pet', 'profile', 'shop', 'ecommerce', 'products', 'online store'],
 };
 
+// Font preloading for better performance
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 interface RootLayoutProps {
   readonly children: Readonly<React.ReactNode>;
 }
@@ -23,14 +29,6 @@ export default function RootLayout(props: RootLayoutProps) {
   const { children } = props;
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Roboto:wght@400;500&family=Open+Sans:wght@400;600&family=Montserrat:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body className="antialiased min-h-screen flex flex-col">
         <ErrorBoundary>
           <Providers>

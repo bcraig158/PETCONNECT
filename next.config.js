@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
@@ -8,7 +9,7 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
-  
+
   // Image optimization
   images: {
     remotePatterns: [
@@ -26,37 +27,27 @@ const nextConfig = {
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react', '@dnd-kit/core', 'framer-motion'],
-    serverComponentsExternalPackages: ['argon2', '@mapbox/node-pre-gyp'],
-    // Turbopack configuration
-    turbo: {
-      resolveAlias: {
-        // Ignore node-pre-gyp HTML files - use wildcard pattern
-        '**/node-pre-gyp/lib/util/nw-pre-gyp/index.html': './next-empty-module.js',
-      },
-      // Ignore patterns for problematic files
-      resolveExtensions: ['.js', '.jsx', '.ts', '.tsx', '.json', '.mjs'],
-    },
   },
 
   // Webpack optimizations
-  webpack: (config, { dev, isServer, webpack }) => {
+  webpack: (config, { dev, isServer }) => {
     // Fix argon2 native bindings - exclude from all bundles (server and edge)
     config.externals = config.externals || [];
     config.externals.push({
-      'argon2': 'commonjs argon2',
+      argon2: 'commonjs argon2',
       '@mapbox/node-pre-gyp': 'commonjs @mapbox/node-pre-gyp',
     });
-    
+
     // Ignore problematic node-pre-gyp files and HTML files
     config.module = config.module || {};
     config.module.rules = config.module.rules || [];
-    
-    // Ignore node-pre-gyp HTML files
+
+    // Ignore node-pre-gyp HTML files and directories
     config.module.rules.push({
       test: /node_modules\/@mapbox\/node-pre-gyp.*\.html$/,
       use: 'null-loader',
     });
-    
+
     // Ignore entire node-pre-gyp directory for client bundle
     if (!isServer) {
       config.module.rules.push({
@@ -64,7 +55,13 @@ const nextConfig = {
         use: 'null-loader',
       });
     }
-    
+
+    // Ignore nw-pre-gyp HTML files specifically
+    config.module.rules.push({
+      test: /node_modules\/@mapbox\/node-pre-gyp\/lib\/util\/nw-pre-gyp\/index\.html$/,
+      use: 'null-loader',
+    });
+
     // Production optimizations
     if (!dev && !isServer) {
       config.optimization = {
@@ -89,7 +86,7 @@ const nextConfig = {
                 return module.size() > 160000 && /node_modules[/\\]/.test(module.identifier());
               },
               name(module) {
-                const hash = require('crypto').createHash('sha1');
+                const hash = require('node:crypto').createHash('sha1');
                 hash.update(module.identifier());
                 return hash.digest('hex').substring(0, 8);
               },
@@ -106,7 +103,7 @@ const nextConfig = {
             // Shared chunk
             shared: {
               name(module, chunks) {
-                return require('crypto')
+                return require('node:crypto')
                   .createHash('sha1')
                   .update(chunks.reduce((acc, chunk) => acc + chunk.name, ''))
                   .digest('hex')
@@ -150,7 +147,7 @@ const nextConfig = {
       },
     ];
   },
-}
+};
 
-module.exports = withBundleAnalyzer(nextConfig)
-
+module.exports = withBundleAnalyzer(nextConfig);
+/* eslint-enable @typescript-eslint/no-require-imports */
