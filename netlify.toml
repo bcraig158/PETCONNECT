@@ -2,7 +2,7 @@
 # Deploys Next.js 15 with Prisma (PostgreSQL via Supabase)
 
 [build]
-  command = "npm run build"
+  command = "export DATABASE_URL=${DATABASE_URL:-$SUPABASE_DATABASE_URL} && npm run build"
   publish = ".next"
 
 [build.environment]
