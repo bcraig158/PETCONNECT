@@ -11,7 +11,7 @@ type Embed = {
 export default function EmbedWidget({ embed }: { embed: Embed }) {
   // Sanitize HTML for safety
   const sanitized = DOMPurify.sanitize(embed.htmlSafe, {
-    ALLOWED_TAGS: ['iframe', 'div', 'script'],
+    ALLOWED_TAGS: ['iframe', 'div'],
     ALLOWED_ATTR: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class', 'id'],
   });
 

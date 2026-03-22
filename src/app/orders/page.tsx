@@ -1,8 +1,9 @@
-// src/app/orders/page.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { formatUSD } from '@/lib/currency';
 import Link from 'next/link';
+import { toast } from 'sonner';
+import { Package, ShoppingBag } from 'lucide-react';
 
 type Order = {
   id: string;
@@ -37,8 +38,8 @@ export default function OrdersPage() {
       if (res.ok) {
         setOrders(data.orders || []);
       }
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
+    } catch {
+      toast.error('Failed to load orders');
     } finally {
       setLoading(false);
     }
@@ -55,7 +56,6 @@ export default function OrdersPage() {
 
       if (res.ok) {
         const data = await res.json();
-        // Create hosted checkout session for the reorder
         const checkoutRes = await fetch('/api/checkout/hosted', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -65,14 +65,14 @@ export default function OrdersPage() {
         if (checkoutData.url) {
           window.location.href = checkoutData.url;
         } else {
-          alert('Failed to start checkout');
+          toast.error('Failed to start checkout');
         }
       } else {
         const error = await res.json();
-        alert(error.error || 'Failed to reorder. Please try again.');
+        toast.error(error.error || 'Failed to reorder. Please try again.');
       }
-    } catch (error) {
-      alert('An error occurred. Please try again.');
+    } catch {
+      toast.error('An error occurred. Please try again.');
     } finally {
       setReordering(null);
     }
@@ -91,39 +91,66 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      <div className="space-y-4 py-8">
+        <div className="h-8 w-48 bg-neutral-100 rounded animate-pulse" />
+        {[1, 2].map((i) => (
+          <div key={i} className="border rounded-lg p-6 space-y-4 animate-pulse">
+            <div className="flex justify-between">
+              <div className="space-y-2">
+                <div className="h-4 w-32 bg-neutral-100 rounded" />
+                <div className="h-3 w-24 bg-neutral-100 rounded" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-20 bg-neutral-100 rounded" />
+                <div className="h-5 w-16 bg-neutral-100 rounded" />
+              </div>
+            </div>
+            <div className="h-16 bg-neutral-50 rounded" />
+            <div className="h-10 bg-neutral-100 rounded" />
+          </div>
+        ))}
       </div>
     );
   }
 
   return (
-    <section>
+    <section className="py-4">
       <h1 className="mb-6 text-3xl font-bold">Order History</h1>
 
       {orders.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-neutral-600 mb-4">You haven't placed any orders yet.</p>
-          <Link href="/products" className="text-black underline">
+        <div className="text-center py-16 space-y-4">
+          <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto">
+            <Package className="text-neutral-400" size={28} />
+          </div>
+          <p className="text-neutral-600">You haven&apos;t placed any orders yet.</p>
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 rounded-lg bg-black px-5 py-2.5 text-white text-sm font-medium hover:bg-neutral-800 transition-colors"
+          >
+            <ShoppingBag size={16} />
             Browse Products
           </Link>
         </div>
       ) : (
         <div className="space-y-6">
           {orders.map((order) => (
-            <div key={order.id} className="border rounded-lg p-6">
+            <div key={order.id} className="border rounded-lg p-6 hover:shadow-sm transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="font-medium">Order #{order.id.slice(-8)}</p>
                   <p className="text-sm text-neutral-600">
-                    {new Date(order.createdAt).toLocaleDateString()}
+                    {new Date(order.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">{formatUSD(order.totalCents)}</p>
                   <span
-                    className={`inline-block mt-1 px-2 py-1 rounded text-xs ${getStatusColor(
-                      order.status
+                    className={`inline-block mt-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      order.status,
                     )}`}
                   >
                     {order.status}
@@ -134,7 +161,7 @@ export default function OrdersPage() {
               <div className="space-y-2 mb-4">
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-center gap-3">
-                    <div className="w-16 h-16 bg-neutral-100 rounded overflow-hidden">
+                    <div className="w-14 h-14 bg-neutral-100 rounded-lg overflow-hidden flex-shrink-0">
                       <img
                         src={item.product.imageUrl}
                         alt={item.nameSnap}
@@ -144,13 +171,13 @@ export default function OrdersPage() {
                         }}
                       />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{item.nameSnap}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{item.nameSnap}</p>
                       <p className="text-sm text-neutral-600">
-                        Quantity: {item.quantity} × {formatUSD(item.unitCents)}
+                        Qty: {item.quantity} &times; {formatUSD(item.unitCents)}
                       </p>
                     </div>
-                    <p className="font-medium">{formatUSD(item.unitCents * item.quantity)}</p>
+                    <p className="font-medium text-sm">{formatUSD(item.unitCents * item.quantity)}</p>
                   </div>
                 ))}
               </div>
@@ -158,7 +185,7 @@ export default function OrdersPage() {
               <button
                 onClick={() => handleReorder(order.id)}
                 disabled={reordering === order.id}
-                className="w-full rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+                className="w-full rounded-lg bg-black px-4 py-2.5 text-white text-sm font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors"
               >
                 {reordering === order.id ? 'Processing...' : 'Reorder'}
               </button>
@@ -169,4 +196,3 @@ export default function OrdersPage() {
     </section>
   );
 }
-

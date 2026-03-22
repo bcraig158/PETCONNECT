@@ -1,7 +1,7 @@
-// src/components/builder/BasicInfoPanel.tsx
 'use client';
 import { usePageBuilderStore } from '@/lib/store/pageBuilder';
 import { useRef } from 'react';
+import { toast } from 'sonner';
 
 export default function BasicInfoPanel() {
   const { schema, updateBasicInfo } = usePageBuilderStore();
@@ -23,11 +23,12 @@ export default function BasicInfoPanel() {
       if (res.ok) {
         const data = await res.json();
         updateBasicInfo({ profileUrl: data.url });
+        toast.success('Photo uploaded');
       } else {
-        alert('Upload failed');
+        toast.error('Upload failed');
       }
-    } catch (error) {
-      alert('Upload error');
+    } catch {
+      toast.error('Upload error');
     }
   };
 
@@ -60,7 +61,7 @@ export default function BasicInfoPanel() {
           {schema?.profileUrl && (
             <img
               src={schema.profileUrl}
-              alt="Profile"
+              alt={`${schema.displayName || 'Pet'} profile photo`}
               className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
             />
           )}
@@ -74,7 +75,8 @@ export default function BasicInfoPanel() {
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
+              aria-label="Upload profile photo"
             >
               Upload Photo
             </button>
@@ -87,6 +89,7 @@ export default function BasicInfoPanel() {
           onChange={(e) => updateBasicInfo({ profileUrl: e.target.value })}
           className="w-full mt-2 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="https://..."
+          aria-label="Profile photo URL"
         />
       </div>
 

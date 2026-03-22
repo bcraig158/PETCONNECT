@@ -1,20 +1,12 @@
-// src/lib/errorHandler.ts
-// Centralized error handling utility
+import { toast } from 'sonner';
 
 export function handleAsyncError(
   error: unknown,
   context: string,
-  userMessage: string = 'An error occurred'
+  userMessage: string = 'An error occurred',
 ): void {
-  // Log error for debugging
   console.error(`${context}:`, error);
-  
-  // Provide user feedback
-  // In a production app, you might use a toast notification system
-  alert(userMessage);
-  
-  // Optionally: send to error tracking service (Sentry, etc.)
-  // trackError(error, context);
+  toast.error(userMessage);
 }
 
 export async function handleApiError(response: Response): Promise<string> {
@@ -25,4 +17,3 @@ export async function handleApiError(response: Response): Promise<string> {
     return `Request failed with status ${response.status}`;
   }
 }
-

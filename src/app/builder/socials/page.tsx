@@ -1,14 +1,18 @@
-// src/app/builder/socials/page.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { z } from 'zod';
+import { toast } from 'sonner';
 
 const platforms = ['facebook', 'linkedin', 'instagram', 'youtube', 'twitter', 'whatsapp', 'tiktok'];
+
+const socialsSchema = z.record(z.string().url('Please enter a valid URL').or(z.string().length(0)));
 
 export default function SocialsPage() {
   const [socials, setSocials] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchSocials();
@@ -22,14 +26,28 @@ export default function SocialsPage() {
         const pageSocials = data.page.socialsJson || {};
         setSocials(typeof pageSocials === 'object' ? pageSocials : {});
       }
-    } catch (error) {
-      console.error('Failed to fetch socials:', error);
+    } catch {
+      toast.error('Failed to load social links');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
+    setFieldErrors({});
+
+    const parsed = socialsSchema.safeParse(socials);
+    if (!parsed.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (key) errors[String(key)] = issue.message;
+      }
+      setFieldErrors(errors);
+      toast.error('Please fix the invalid URLs before saving');
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch('/api/page/socials', {
@@ -39,12 +57,12 @@ export default function SocialsPage() {
       });
 
       if (res.ok) {
-        alert('Social links saved!');
+        toast.success('Social links saved!');
       } else {
-        alert('Failed to save social links');
+        toast.error('Failed to save social links');
       }
-    } catch (error) {
-      alert('An error occurred');
+    } catch {
+      toast.error('An error occurred');
     } finally {
       setSaving(false);
     }
@@ -62,7 +80,7 @@ export default function SocialsPage() {
     <section>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Manage Social Links</h1>
-        <Link href="/builder" className="rounded border px-4 py-2 hover:bg-neutral-50">
+        <Link href="/builder" className="rounded border px-4 py-2 hover:bg-neutral-50 transition-colors">
           Back to Builder
         </Link>
       </div>
@@ -77,12 +95,22 @@ export default function SocialsPage() {
               <input
                 type="url"
                 value={socials[platform] || ''}
-                onChange={(e) =>
-                  setSocials({ ...socials, [platform]: e.target.value })
-                }
+                onChange={(e) => {
+                  setSocials({ ...socials, [platform]: e.target.value });
+                  if (fieldErrors[platform]) {
+                    setFieldErrors((prev) => {
+                      const next = { ...prev };
+                      delete next[platform];
+                      return next;
+                    });
+                  }
+                }}
                 placeholder={`https://${platform}.com/your-profile`}
-                className="w-full rounded border p-2"
+                className={`w-full rounded border p-2 ${fieldErrors[platform] ? 'border-red-500' : ''}`}
               />
+              {fieldErrors[platform] && (
+                <p className="text-red-500 text-sm mt-1">{fieldErrors[platform]}</p>
+              )}
             </div>
           ))}
 

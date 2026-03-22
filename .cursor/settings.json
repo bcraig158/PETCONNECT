@@ -1,0 +1,22 @@
+{
+  "plugins": {
+    "supabase": {
+      "enabled": true
+    },
+    "databricks-skills": {
+      "enabled": true
+    },
+    "compound-engineering": {
+      "enabled": true
+    },
+    "superpowers": {
+      "enabled": true
+    },
+    "parallel": {
+      "enabled": true
+    },
+    "firecrawl": {
+      "enabled": true
+    }
+  }
+}

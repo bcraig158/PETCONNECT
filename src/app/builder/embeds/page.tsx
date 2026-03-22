@@ -1,4 +1,3 @@
-// src/app/builder/embeds/page.tsx
 'use client';
 import SortableItem from '@/components/builder/SortableItem';
 import SortableList from '@/components/builder/SortableList';
@@ -7,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 const embedSchema = z.object({
@@ -69,9 +69,10 @@ export default function EmbedsPage() {
       if (res.ok) {
         reset();
         fetchEmbeds();
+        toast.success('Embed added');
       } else {
         const errorMessage = await handleApiError(res);
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to add embed. Please try again.';
@@ -92,9 +93,10 @@ export default function EmbedsPage() {
 
       if (res.ok) {
         fetchEmbeds();
+        toast.success('Embed deleted');
       } else {
         const errorMessage = await handleApiError(res);
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err: unknown) {
       const message =
@@ -119,10 +121,9 @@ export default function EmbedsPage() {
       });
 
       if (!res.ok) {
-        // Revert on error
         fetchEmbeds();
         const errorMessage = await handleApiError(res);
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err: unknown) {
       const message =

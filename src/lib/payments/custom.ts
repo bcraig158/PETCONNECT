@@ -1,18 +1,23 @@
-// src/lib/payments/custom.ts
-import type { PaymentProvider } from "./provider";
+import type { PaymentProvider } from './provider';
 
-const BASE = process.env.PAYMENT_PROVIDER_BASE_URL!;
-const SECRET = process.env.PAYMENT_SECRET_KEY!;
-const PUB = process.env.PAYMENT_PUBLIC_KEY!;
+function getPaymentEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Payment env var ${key} is required but not set`);
+  }
+  return value;
+}
 
-// Example using fetch; replace endpoints/fields to match your processor
 export const CustomProvider: PaymentProvider = {
   async createHostedCheckout({ orderId, lines, customer, successUrl, cancelUrl }) {
-    const res = await fetch(`${BASE}/v1/checkout/sessions`, {
-      method: "POST",
+    const base = getPaymentEnv('PAYMENT_PROVIDER_BASE_URL');
+    const secret = getPaymentEnv('PAYMENT_SECRET_KEY');
+
+    const res = await fetch(`${base}/v1/checkout/sessions`, {
+      method: 'POST',
       headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${SECRET}`,
+        'content-type': 'application/json',
+        authorization: `Bearer ${secret}`,
       },
       body: JSON.stringify({
         orderId,
@@ -31,12 +36,14 @@ export const CustomProvider: PaymentProvider = {
   },
 
   async tokenizeCard({ cardPayload }) {
-    // Typically done client-side via provider JS SDK; fallback server call if needed
-    const res = await fetch(`${BASE}/v1/tokens`, {
-      method: "POST",
+    const base = getPaymentEnv('PAYMENT_PROVIDER_BASE_URL');
+    const pub = getPaymentEnv('PAYMENT_PUBLIC_KEY');
+
+    const res = await fetch(`${base}/v1/tokens`, {
+      method: 'POST',
       headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${PUB}`,
+        'content-type': 'application/json',
+        authorization: `Bearer ${pub}`,
       },
       body: JSON.stringify({ card: cardPayload }),
     });
@@ -44,15 +51,18 @@ export const CustomProvider: PaymentProvider = {
       const error = await res.text();
       throw new Error(`Tokenization failed: ${error}`);
     }
-    return res.json(); // { token }
+    return res.json();
   },
 
   async chargeWithToken({ orderId, token, amountCents, currency }) {
-    const res = await fetch(`${BASE}/v1/charges`, {
-      method: "POST",
+    const base = getPaymentEnv('PAYMENT_PROVIDER_BASE_URL');
+    const secret = getPaymentEnv('PAYMENT_SECRET_KEY');
+
+    const res = await fetch(`${base}/v1/charges`, {
+      method: 'POST',
       headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${SECRET}`,
+        'content-type': 'application/json',
+        authorization: `Bearer ${secret}`,
       },
       body: JSON.stringify({
         orderId,
@@ -65,7 +75,6 @@ export const CustomProvider: PaymentProvider = {
       const error = await res.text();
       throw new Error(`Charge failed: ${error}`);
     }
-    return res.json(); // { providerRef, status }
+    return res.json();
   },
 };
-

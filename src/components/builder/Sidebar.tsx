@@ -1,4 +1,3 @@
-// src/components/builder/Sidebar.tsx
 'use client';
 import { Palette, Link2, FileText, Settings, Eye } from 'lucide-react';
 import { usePageBuilderStore } from '@/lib/store/pageBuilder';
@@ -16,24 +15,29 @@ export default function Sidebar() {
   const { currentSection, setCurrentSection } = usePageBuilderStore();
 
   return (
-    <aside className="w-64 bg-[#1f2a38] text-white h-screen flex flex-col fixed left-0 top-0 overflow-y-auto">
+    <aside
+      className="w-64 bg-[#1f2a38] text-white h-screen flex flex-col fixed left-0 top-0 overflow-y-auto"
+      aria-label="Page builder navigation"
+    >
       <div className="p-6 border-b border-[#273443]">
         <h1 className="text-xl font-bold">Page Builder</h1>
         <p className="text-sm text-gray-400 mt-1">Customize your profile</p>
       </div>
-      
-      <nav className="flex-1 p-4">
+
+      <nav className="flex-1 p-4" aria-label="Builder sections">
         {sections.map((section) => {
           const Icon = section.icon;
           const isActive = currentSection === section.id;
-          
+
           return (
             <button
               key={section.id}
               onClick={() => setCurrentSection(section.id)}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={`Go to ${section.name} section`}
               className={`
                 w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg text-left
-                transition-colors
+                transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-[#1f2a38]
                 ${
                   isActive
                     ? 'bg-[#0d1620] text-white shadow-lg'
@@ -41,7 +45,7 @@ export default function Sidebar() {
                 }
               `}
             >
-              <Icon size={20} />
+              <Icon size={20} aria-hidden />
               <span className="font-medium">{section.name}</span>
             </button>
           );
@@ -57,4 +61,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-

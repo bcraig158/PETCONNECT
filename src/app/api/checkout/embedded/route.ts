@@ -1,7 +1,46 @@
-// src/app/api/checkout/embedded/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
+
+export async function GET(req: NextRequest) {
+  try {
+    const orderId = req.nextUrl.searchParams.get("orderId");
+    if (!orderId) {
+      return NextResponse.json({ error: "Order ID required" }, { status: 400 });
+    }
+
+    const order = await db.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: { product: true },
+        },
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      orderId: order.id,
+      amountCents: order.totalCents,
+      currency: order.currency,
+      status: order.status,
+      items: order.items.map((item) => ({
+        name: item.nameSnap,
+        quantity: item.quantity,
+        unitCents: item.unitCents,
+      })),
+    });
+  } catch (error) {
+    console.error("Embedded checkout GET error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {

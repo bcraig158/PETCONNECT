@@ -1,13 +1,19 @@
-// src/app/checkout/page.tsx
 'use client';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { formatUSD } from '@/lib/currency';
+import { toast } from 'sonner';
+import { RotateCcw, ShoppingBag, CreditCard } from 'lucide-react';
 
 type OrderData = {
   orderId: string;
   amountCents: number;
   currency: string;
+  items?: Array<{
+    name: string;
+    quantity: number;
+    unitCents: number;
+  }>;
 };
 
 function CheckoutForm() {
@@ -18,43 +24,35 @@ function CheckoutForm() {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [cardToken, setCardToken] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [fetchFailed, setFetchFailed] = useState(false);
+
+  const fetchOrder = useCallback(async () => {
+    if (!orderId) return;
+    setFetchFailed(false);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/checkout/embedded?orderId=${orderId}`);
+      const data = await res.json();
+      if (data.orderId) {
+        setOrder(data);
+      } else {
+        setError(data.error || 'Order not found');
+        setFetchFailed(true);
+      }
+    } catch {
+      setError('Failed to load order details');
+      setFetchFailed(true);
+    }
+  }, [orderId]);
 
   useEffect(() => {
     if (!orderId) {
       router.push('/products');
       return;
     }
-
-    // Fetch order details if needed (already have from embedded route)
-    // For now, we assume orderId is valid and fetch amount if needed
-    fetch(`/api/checkout/embedded?orderId=${orderId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.orderId) {
-          setOrder(data);
-        }
-      })
-      .catch(() => {
-        setError('Failed to load order details');
-      });
-  }, [orderId, router]);
-
-  // Payment tokenization placeholder (unused for now, will be used when payment provider SDK is integrated)
-  // const handleTokenize = async () => {
-  //   // This is where you would integrate your payment provider's JS SDK
-  //   // to tokenize the card client-side. For now, this is a placeholder.
-  //   // The actual implementation depends on your payment provider.
-  //   
-  //   // Example structure (replace with your provider's actual SDK):
-  //   // const token = await paymentProviderSDK.tokenize({
-  //   //   cardNumber: '...',
-  //   //   expiry: '...',
-  //   //   cvv: '...',
-  //   // });
-  //   
-  //   alert('Payment tokenization not yet implemented. Please integrate your payment provider\'s JS SDK here to tokenize cards client-side.');
-  //   return null;
-  // };
+    fetchOrder();
+  }, [orderId, router, fetchOrder]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,12 +74,13 @@ function CheckoutForm() {
       const data = await res.json();
 
       if (res.ok && data.status === 'PAID') {
+        toast.success('Payment successful!');
         router.push(`/success?order_id=${orderId}`);
       } else {
         setError(data.error || 'Payment processing failed');
         setLoading(false);
       }
-    } catch (error) {
+    } catch {
       setError('An error occurred. Please try again.');
       setLoading(false);
     }
@@ -89,23 +88,40 @@ function CheckoutForm() {
 
   if (!order && !error) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center space-y-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-neutral-200 border-t-black mx-auto" />
+          <p className="text-sm text-neutral-500">Loading order details...</p>
+        </div>
       </div>
     );
   }
 
-  if (error && !order) {
+  if (fetchFailed) {
     return (
-      <section>
-        <div className="text-center py-12">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => router.push('/products')}
-            className="rounded bg-black px-4 py-2 text-white"
-          >
-            Back to Products
-          </button>
+      <section className="max-w-md mx-auto">
+        <div className="text-center py-16 space-y-4">
+          <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto">
+            <CreditCard className="text-red-400" size={24} />
+          </div>
+          <h2 className="text-lg font-semibold">Unable to load order</h2>
+          <p className="text-neutral-600 text-sm">{error}</p>
+          <div className="flex gap-3 justify-center pt-2">
+            <button
+              onClick={fetchOrder}
+              className="inline-flex items-center gap-2 rounded-lg bg-black px-5 py-2.5 text-white text-sm font-medium hover:bg-neutral-800 transition-colors"
+            >
+              <RotateCcw size={16} />
+              Retry
+            </button>
+            <button
+              onClick={() => router.push('/products')}
+              className="inline-flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-neutral-50 transition-colors"
+            >
+              <ShoppingBag size={16} />
+              Products
+            </button>
+          </div>
         </div>
       </section>
     );
@@ -113,68 +129,87 @@ function CheckoutForm() {
 
   return (
     <section>
-      <h1 className="mb-4 text-2xl font-semibold">Full Checkout</h1>
+      <h1 className="mb-6 text-2xl font-bold">Checkout</h1>
       <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
-        <form onSubmit={handleSubmit} className="grid gap-3">
-          <h2 className="text-lg font-medium">Payment Information</h2>
-          
-          <div className="p-4 border rounded bg-neutral-50">
-            <p className="text-sm text-neutral-600 mb-3">
-              <strong>Note:</strong> Integrate your payment provider's hosted fields or JS SDK here
-              to tokenize the card client-side. Never collect raw card numbers on your server.
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <h2 className="text-lg font-semibold">Payment Information</h2>
+
+          <div className="p-4 border rounded-lg bg-neutral-50">
+            <p className="text-sm text-neutral-600 mb-2">
+              <strong>Note:</strong> Integrate your payment provider&apos;s hosted fields or JS SDK
+              here to securely tokenize card details.
             </p>
             <p className="text-xs text-neutral-500">
-              This should use your provider's hosted payment fields (iframe) or JS SDK
-              to generate a secure token. Replace this placeholder with your actual integration.
+              Never collect raw card numbers on your server.
             </p>
           </div>
 
-          {/* Placeholder for payment provider's hosted fields */}
-          <div id="payment-form" className="border rounded p-4 min-h-[200px] flex items-center justify-center bg-neutral-50">
-            <p className="text-sm text-neutral-600 text-center">
-              Payment form placeholder<br />
-              Integrate your payment provider SDK here
-            </p>
+          <div
+            id="payment-form"
+            className="border-2 border-dashed rounded-lg p-6 min-h-[180px] flex items-center justify-center bg-neutral-50"
+          >
+            <div className="text-center">
+              <CreditCard className="text-neutral-300 mx-auto mb-2" size={32} />
+              <p className="text-sm text-neutral-500">
+                Payment provider SDK integration area
+              </p>
+            </div>
           </div>
 
-          <input
-            type="text"
-            placeholder="Payment Token (from provider SDK)"
-            value={cardToken}
-            onChange={(e) => setCardToken(e.target.value)}
-            className="rounded border p-2"
-          />
+          <div>
+            <label htmlFor="payment-token" className="block text-sm font-medium mb-1">
+              Payment Token
+            </label>
+            <input
+              id="payment-token"
+              type="text"
+              placeholder="Token from provider SDK"
+              value={cardToken}
+              onChange={(e) => setCardToken(e.target.value)}
+              className="w-full rounded-lg border p-2.5"
+            />
+          </div>
 
           {error && (
-            <p className="text-red-500 text-sm">{error}</p>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading || !cardToken}
-            className="mt-3 rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+            className="w-full rounded-lg bg-black px-4 py-3 text-white font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors"
           >
-            {loading ? 'Processing…' : `Pay ${order ? formatUSD(order.amountCents) : ''}`}
+            {loading ? 'Processing...' : `Pay ${order ? formatUSD(order.amountCents) : ''}`}
           </button>
         </form>
 
-        <div className="border rounded p-4 h-fit">
-          <h2 className="text-lg font-medium mb-4">Order Summary</h2>
-          <div className="space-y-2">
-            {order && (
-              <>
-                <div className="flex justify-between">
-                  <span>Order #{order.orderId.slice(-8)}</span>
+        <div className="border rounded-lg p-6 h-fit">
+          <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+          {order && (
+            <div className="space-y-3">
+              <p className="text-sm text-neutral-500">Order #{order.orderId.slice(-8)}</p>
+
+              {order.items && order.items.length > 0 && (
+                <div className="space-y-2 border-b pb-3">
+                  {order.items.map((item, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span>
+                        {item.name} &times; {item.quantity}
+                      </span>
+                      <span>{formatUSD(item.unitCents * item.quantity)}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="border-t pt-2 mt-2">
-                  <div className="flex justify-between font-semibold">
-                    <span>Total</span>
-                    <span>{formatUSD(order.amountCents)}</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+              )}
+
+              <div className="flex justify-between font-semibold text-lg pt-1">
+                <span>Total</span>
+                <span>{formatUSD(order.amountCents)}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -183,13 +218,13 @@ function CheckoutForm() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={
-      <section>
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-neutral-200 border-t-black" />
         </div>
-      </section>
-    }>
+      }
+    >
       <CheckoutForm />
     </Suspense>
   );

@@ -1,5 +1,5 @@
 # Netlify Configuration for PetConnect
-# This file configures Netlify to deploy Next.js 15 with Prisma and Supabase
+# Deploys Next.js 15 with Prisma (PostgreSQL via Supabase)
 
 [build]
   command = "npm run build"
@@ -9,12 +9,9 @@
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
 
-# Essential Next.js plugin for proper routing and serverless functions
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Redirects for Next.js App Router
-# The plugin handles most routing, but we include this for fallback
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/next"
@@ -29,8 +26,9 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "frame-ancestors 'self'; frame-src 'self' https://www.youtube.com https://player.vimeo.com"
 
-# Cache static assets
+# Cache static assets aggressively
 [[headers]]
   for = "/images/*"
   [headers.values]
@@ -41,12 +39,22 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Environment variables should be set in Netlify Dashboard:
-# - DATABASE_URL (Supabase connection string)
-# - AUTH_SECRET (NextAuth secret)
-# - NEXT_PUBLIC_SITE_URL (your Netlify site URL)
-# Optional:
-# - RESEND_API_KEY (for contact form emails)
-# - CONTACT_FROM_EMAIL
-# - CONTACT_TO_EMAIL
+# Cache Google Fonts
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ── Required environment variables (set in Netlify Dashboard) ──
+# DATABASE_URL          — Supabase PostgreSQL connection string
+# AUTH_SECRET           — openssl rand -hex 32
+# NEXT_PUBLIC_SITE_URL  — Your Netlify site URL (e.g. https://petconnect.netlify.app)
+#
+# ── Optional ──
+# RESEND_API_KEY        — For contact form emails
+# CONTACT_FROM_EMAIL    — Verified sender (e.g. PetConnect <noreply@yourdomain.com>)
+# CONTACT_TO_EMAIL      — Receives site-wide contact form submissions
+# UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN — Rate limiting
+# BLOB_READ_WRITE_TOKEN — Vercel Blob file uploads
+# PAYMENT_PROVIDER_BASE_URL / PAYMENT_SECRET_KEY / PAYMENT_PUBLIC_KEY — Payments
 

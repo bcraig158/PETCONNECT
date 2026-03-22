@@ -1,7 +1,9 @@
 // src/app/[username]/page.tsx
 import AvatarCard from '@/components/public/AvatarCard';
 import ButtonGroup from '@/components/public/ButtonGroup';
+import ContactForm from '@/components/public/ContactForm';
 import EmbedWidget from '@/components/public/EmbedWidget';
+import FontLoader from '@/components/public/FontLoader';
 import SocialBar from '@/components/public/SocialBar';
 import { db } from '@/lib/db';
 import DOMPurify from 'isomorphic-dompurify';
@@ -92,6 +94,7 @@ export default async function PublicPagePage({ params }: { params: { username: s
         } as React.CSSProperties
       }
     >
+      <FontLoader font={fontFamily} />
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Profile Header */}
         <AvatarCard
@@ -107,8 +110,7 @@ export default async function PublicPagePage({ params }: { params: { username: s
         {/* Action Buttons / Links */}
         <ButtonGroup buttons={page.links} theme={buttonTheme} />
 
-        {/* Contact Form - can be enabled in page settings */}
-        {/* <ContactForm pageId={page.id} pageSlug={page.slug} /> */}
+        <ContactForm pageId={page.id} pageSlug={page.slug} />
 
         {/* Embeds */}
         {page.embeds.length > 0 && (

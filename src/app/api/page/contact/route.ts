@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });
     }
 
-    // Send email to page owner
-    if (resend && process.env.CONTACT_FROM_EMAIL && process.env.CONTACT_TO_EMAIL) {
+    if (resend && process.env.CONTACT_FROM_EMAIL) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://petconnect.com';
       await resend.emails.send({
         from: process.env.CONTACT_FROM_EMAIL,
         to: page.user.email,
@@ -50,19 +50,11 @@ export async function POST(req: NextRequest) {
           <p><strong>Message:</strong></p>
           <p>${message.replace(/\n/g, '<br>')}</p>
           <hr>
-          <p><small>Sent via profile page: ${process.env.NEXT_PUBLIC_SITE_URL}/${pageSlug}</small></p>
+          <p><small>Sent via profile page: ${siteUrl}/${pageSlug}</small></p>
         `,
       });
-    } else {
-      // Log in development if Resend not configured
-      console.log('Page contact form submission (Resend not configured):', {
-        pageSlug,
-        name,
-        email,
-        phone,
-        message,
-        ownerEmail: page.user.email,
-      });
+    } else if (process.env.NODE_ENV === 'development') {
+      console.log('[dev] Page contact form:', { pageSlug, name, email, message });
     }
 
     return NextResponse.json({ ok: true });

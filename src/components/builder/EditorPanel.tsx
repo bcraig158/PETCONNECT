@@ -95,7 +95,20 @@ export default function EditorPanel() {
               </div>
               <div className="p-4 border rounded-lg">
                 <h3 className="font-semibold mb-2">Export Data</h3>
-                <button className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+                <button
+                  className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  onClick={() => {
+                    const data = usePageBuilderStore.getState().schema;
+                    if (!data) return;
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${data.slug || 'page'}-export.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
                   Download JSON
                 </button>
               </div>

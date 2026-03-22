@@ -13,7 +13,9 @@ const nextConfig = {
   // Image optimization
   images: {
     remotePatterns: [
-      // Add patterns for external images if needed
+      { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
+      { protocol: 'https', hostname: '*.supabase.co' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,

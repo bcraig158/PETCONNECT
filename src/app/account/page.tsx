@@ -1,9 +1,9 @@
-// src/app/account/page.tsx
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 type UserProfile = {
   email: string;
@@ -17,6 +17,7 @@ export default function AccountPage() {
   const [mounted, setMounted] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState({
     ownerName: '',
@@ -28,25 +29,38 @@ export default function AccountPage() {
   });
   const [error, setError] = useState('');
 
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await fetch('/api/account/profile');
+      if (res.ok) {
+        const data = await res.json();
+        const user = data.user;
+        setProfile({
+          email: user.email || '',
+          ownerName: user.ownerName || '',
+          petName: user.petName || '',
+          username: user.username || '',
+        });
+        setFormData((prev) => ({
+          ...prev,
+          ownerName: user.ownerName || '',
+          petName: user.petName || '',
+          email: user.email || '',
+        }));
+      }
+    } catch {
+      // Fall back to session data
+    } finally {
+      setProfileLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     if (session?.user) {
-      setProfile({
-        email: session.user.email || '',
-        ownerName: (session.user as any).name || '',
-        petName: '',
-        username: (session.user as any).username || '',
-      });
-      setFormData({
-        ownerName: (session.user as any).name || '',
-        petName: '',
-        email: session.user.email || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
+      fetchProfile();
     }
-  }, [session]);
+  }, [session, fetchProfile]);
 
   const handleSave = async () => {
     setError('');
@@ -59,7 +73,7 @@ export default function AccountPage() {
     }
 
     try {
-      const updateData: any = {};
+      const updateData: Record<string, string> = {};
       if (formData.ownerName) updateData.ownerName = formData.ownerName;
       if (formData.petName) updateData.petName = formData.petName;
       if (formData.email) updateData.email = formData.email;
@@ -79,24 +93,27 @@ export default function AccountPage() {
       if (res.ok) {
         setProfile(data.user);
         setEditing(false);
-        setFormData({
-          ...formData,
+        setFormData((prev) => ({
+          ...prev,
+          ownerName: data.user.ownerName || '',
+          petName: data.user.petName || '',
+          email: data.user.email || '',
           currentPassword: '',
           newPassword: '',
           confirmPassword: '',
-        });
-        alert('Profile updated successfully');
+        }));
+        toast.success('Profile updated successfully');
       } else {
         setError(data.error || 'Failed to update profile');
       }
-    } catch (error) {
+    } catch {
       setError('An error occurred');
     } finally {
       setSaving(false);
     }
   };
 
-  if (status === 'loading' || !mounted) {
+  if (status === 'loading' || !mounted || profileLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
@@ -105,10 +122,10 @@ export default function AccountPage() {
   }
 
   if (!session) {
-    return null; // Middleware will redirect
+    return null;
   }
 
-  const username = (session.user as any)?.username;
+  const username = profile?.username || (session.user as any)?.username;
 
   return (
     <section>
@@ -221,7 +238,7 @@ export default function AccountPage() {
               </div>
               <div>
                 <p className="text-sm text-neutral-600">Owner Name</p>
-                <p className="font-medium">{profile?.ownerName || session.user?.name}</p>
+                <p className="font-medium">{profile?.ownerName || 'Not set'}</p>
               </div>
               <div>
                 <p className="text-sm text-neutral-600">Pet Name</p>
@@ -236,14 +253,14 @@ export default function AccountPage() {
           <div className="space-y-3">
             <Link
               href="/orders"
-              className="block w-full rounded border px-4 py-2 text-center hover:bg-neutral-50"
+              className="block w-full rounded border px-4 py-2 text-center hover:bg-neutral-50 transition-colors"
             >
               View Order History
             </Link>
             {username && (
               <Link
-                href={`/builder`}
-                className="block w-full rounded border px-4 py-2 text-center hover:bg-neutral-50"
+                href="/builder"
+                className="block w-full rounded border px-4 py-2 text-center hover:bg-neutral-50 transition-colors"
               >
                 Edit Profile Page
               </Link>
@@ -251,7 +268,7 @@ export default function AccountPage() {
             {username && (
               <Link
                 href={`/${username}`}
-                className="block w-full rounded border px-4 py-2 text-center hover:bg-neutral-50"
+                className="block w-full rounded border px-4 py-2 text-center hover:bg-neutral-50 transition-colors"
                 target="_blank"
               >
                 View Public Page
@@ -259,7 +276,7 @@ export default function AccountPage() {
             )}
             <button
               onClick={() => signOut({ callbackUrl: '/' })}
-              className="w-full rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+              className="w-full rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 transition-colors"
             >
               Sign Out
             </button>

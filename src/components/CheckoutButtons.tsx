@@ -1,7 +1,7 @@
-// src/components/CheckoutButtons.tsx
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function CheckoutButtons({ slug }: { slug: string }) {
   const router = useRouter();
@@ -10,21 +10,21 @@ export default function CheckoutButtons({ slug }: { slug: string }) {
   async function basic() {
     setLoading(true);
     try {
-      const res = await fetch('/api/checkout/hosted', {
+      const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ productSlug: slug, quantity: 1 }),
+        body: JSON.stringify({ slug, quantity: 1 }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
         setLoading(false);
-        alert(data.error || 'Unable to start checkout.');
+        toast.error(data.error || 'Unable to start checkout.');
       }
-    } catch (error) {
+    } catch {
       setLoading(false);
-      alert('Checkout failed. Please try again.');
+      toast.error('Checkout failed. Please try again.');
     }
   }
 
@@ -41,11 +41,11 @@ export default function CheckoutButtons({ slug }: { slug: string }) {
         router.push(`/checkout?orderId=${data.orderId}`);
       } else {
         setLoading(false);
-        alert(data.error || 'Unable to start checkout.');
+        toast.error(data.error || 'Unable to start checkout.');
       }
-    } catch (error) {
+    } catch {
       setLoading(false);
-      alert('Checkout failed. Please try again.');
+      toast.error('Checkout failed. Please try again.');
     }
   }
 

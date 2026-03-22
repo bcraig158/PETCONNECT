@@ -1,4 +1,3 @@
-// src/app/builder/files/page.tsx
 'use client';
 import SortableItem from '@/components/builder/SortableItem';
 import SortableList from '@/components/builder/SortableList';
@@ -7,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 const fileSchema = z.object({
@@ -77,7 +77,7 @@ export default function FilesPage() {
 
       if (!uploadRes.ok) {
         const errorMessage = await handleApiError(uploadRes);
-        alert(errorMessage);
+        toast.error(errorMessage);
         return;
       }
 
@@ -97,9 +97,10 @@ export default function FilesPage() {
       if (res.ok) {
         reset();
         fetchFiles();
+        toast.success('File uploaded');
       } else {
         const errorMessage = await handleApiError(res);
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Upload failed. Please try again.';
@@ -126,9 +127,10 @@ export default function FilesPage() {
       if (res.ok) {
         reset();
         fetchFiles();
+        toast.success('File added');
       } else {
         const errorMessage = await handleApiError(res);
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to add file. Please try again.';
@@ -149,9 +151,10 @@ export default function FilesPage() {
 
       if (res.ok) {
         fetchFiles();
+        toast.success('File deleted');
       } else {
         const errorMessage = await handleApiError(res);
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err: unknown) {
       const message =
@@ -176,10 +179,9 @@ export default function FilesPage() {
       });
 
       if (!res.ok) {
-        // Revert on error
         fetchFiles();
         const errorMessage = await handleApiError(res);
-        alert(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err: unknown) {
       const message =

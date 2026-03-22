@@ -1,10 +1,10 @@
-// src/app/builder/links/page.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import SortableList from '@/components/builder/SortableList';
 import SortableItem from '@/components/builder/SortableItem';
 
@@ -63,11 +63,12 @@ export default function LinksPage() {
       if (res.ok) {
         reset();
         fetchLinks();
+        toast.success('Link added');
       } else {
-        alert('Failed to add link');
+        toast.error('Failed to add link');
       }
-    } catch (error) {
-      alert('An error occurred');
+    } catch {
+      toast.error('An error occurred');
     }
   };
 
@@ -82,11 +83,12 @@ export default function LinksPage() {
 
       if (res.ok) {
         fetchLinks();
+        toast.success('Link deleted');
       } else {
-        alert('Failed to delete link');
+        toast.error('Failed to delete link');
       }
-    } catch (error) {
-      alert('An error occurred');
+    } catch {
+      toast.error('An error occurred');
     } finally {
       setDeleting(null);
     }
@@ -104,13 +106,12 @@ export default function LinksPage() {
       });
 
       if (!res.ok) {
-        // Revert on error
         fetchLinks();
-        alert('Failed to save new order');
+        toast.error('Failed to save new order');
       }
-    } catch (error) {
+    } catch {
       fetchLinks();
-      alert('An error occurred while reordering');
+      toast.error('An error occurred while reordering');
     }
   };
 
